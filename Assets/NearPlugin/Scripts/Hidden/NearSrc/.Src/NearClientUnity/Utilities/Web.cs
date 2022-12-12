@@ -22,7 +22,7 @@ namespace NearClientUnity.Utilities
                 {
                     HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    response = client.PostAsync(url, content).Result;
+                    response = await client.PostAsync(url, content);
                 }
                 else
                 {
