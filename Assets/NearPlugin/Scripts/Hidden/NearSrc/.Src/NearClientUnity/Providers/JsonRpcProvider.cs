@@ -1,9 +1,8 @@
 ﻿using NearClientUnity.Utilities;
 using Newtonsoft.Json;
 using System;
-using System.Dynamic;
 using System.Threading.Tasks;
-using System.Web;
+using UnityEngine;
 
 namespace NearClientUnity.Providers
 {
@@ -24,17 +23,15 @@ namespace NearClientUnity.Providers
 
         public override async Task<BlockResult> GetBlockAsync(int blockId)
         {
-            var parameters = new dynamic[1];
-            parameters[0] = blockId;
-            var result = await SendJsonRpc("block", parameters);
+            var parameters = new object[] { blockId };
+            var result = await SendJsonRpc<BlockResult>("block", parameters);
             return result;
         }
 
         public override async Task<ChunkResult> GetChunkAsync(string chunkId)
         {
-            var parameters = new dynamic[1];
-            parameters[0] = chunkId;
-            var result = await SendJsonRpc("chunk", parameters);
+            var parameters = new object[] { chunkId };
+            var result = await SendJsonRpc<ChunkResult>("chunk", parameters);
             return result;
         }
 
@@ -46,73 +43,69 @@ namespace NearClientUnity.Providers
         public override INetwork GetNetwork()
         {
             INetwork result = null;
-
             result.Name = "test";
             result.ChainId = "test";
-
             return result;
         }
 
         public override async Task<NodeStatusResult> GetStatusAsync()
         {
-            var rawStatusResul = await SendJsonRpc("status", new dynamic[0]);
-            var result = NodeStatusResult.FromDynamicJsonObject(rawStatusResul);
+            var rawStatusResult = await SendJsonRpc<object>("status", new object[0]);
+            var result = NodeStatusResult.FromDynamicJsonObject(rawStatusResult);
             return result;
         }
 
         public override async Task<FinalExecutionOutcome> GetTxStatusAsync(byte[] txHash, string accountId)
         {
-            var parameters = new dynamic[2];
-            parameters[0] = Base58.Encode(txHash);
-            parameters[1] = accountId;
-            var result = await SendJsonRpc("tx", parameters);
+            var parameters = new object[] { Base58.Encode(txHash), accountId };
+            var result = await SendJsonRpc<FinalExecutionOutcome>("tx", parameters);
             return result;
         }
 
-        public override async Task<dynamic> QueryAsync(string path, string data)
+        public override async Task<T> QueryAsync<T>(string path, string data)
         {
-            var parameters = new dynamic[2];
-            parameters[0] = path;
-            parameters[1] = data;
+            var parameters = new object[] { path, data };
 
             try
             {
-                var result = await SendJsonRpc("query", parameters);
+                var result = await SendJsonRpc<T>("query", parameters);
                 return result;
             }
             catch (Exception e)
             {
-                throw new Exception($"Quering {path} failed: { e.Message}.");
+                throw new Exception($"Quering {path} failed: {e.Message}.");
             }
         }
 
-        public override async Task<dynamic> SendTransactionAsync(SignedTransaction signedTransaction)
+        public override async Task<T> SendTransactionAsync<T>(SignedTransaction signedTransaction)
         {
             var bytes = signedTransaction.ToByteArray();
-            var parameters = new dynamic[1];
-            parameters[0] = Convert.ToBase64String(bytes, 0, bytes.Length);
-            var rawOutcomeResult = await SendJsonRpc("broadcast_tx_commit", parameters);
-            var result = rawOutcomeResult; //FinalExecutionOutcome.FromDynamicJsonObject(rawOutcomeResult);
+            var parameters = new object[] { Convert.ToBase64String(bytes, 0, bytes.Length) };
+            var rawOutcomeResult = await SendJsonRpc<T>("broadcast_tx_commit", parameters);
+            var result = rawOutcomeResult;
             return result;
         }
 
-        private async Task<dynamic> SendJsonRpc(string method, dynamic[] parameters)
+        private async Task<T> SendJsonRpc<T>(string method, object[] parameters)
         {
-            dynamic request = new ExpandoObject();
-
-            request.method = method;
-            request.parameters = parameters;
-            request.id = _id++;
-            request.jsonrpc = "2.0";
-            var requestString = JsonConvert.SerializeObject(request).Replace("\"parameters\":", "\"params\":");
+            var request = new
+            {
+                method = method,
+                @params = parameters,
+                id = _id++,
+                jsonrpc = "2.0"
+            };
+            
+            var requestString = JsonConvert.SerializeObject(request);
+            
             try
             {
-                var result = await Web.FetchJsonAsync(_connection, requestString);
+                var result = await Web.FetchJsonAsync<T>(_connection, requestString);
                 return result;
             }
-            catch (HttpException e)
+            catch (Exception e)
             {
-                throw new Exception($"{e.ErrorCode}: {e.Message}");
+                throw new Exception(e.ToString());
             }
         }
     }

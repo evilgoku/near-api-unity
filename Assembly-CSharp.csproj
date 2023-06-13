@@ -41,13 +41,13 @@
     <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>
   </PropertyGroup>
   <ItemGroup>
+     <Compile Include="Assets\Example\Scripts\Wasm.cs" />
      <Compile Include="Assets\Example\Scripts\SignOutButtonHandler.cs" />
      <Compile Include="Assets\Example\Scripts\LoginSceneScript.cs" />
      <Compile Include="Assets\Example\Scripts\ContractButtonHandler.cs" />
      <Compile Include="Assets\Example\Scripts\SplashSceneScript.cs" />
      <Compile Include="Assets\Example\Scripts\NearSceneScript.cs" />
      <Compile Include="Assets\Example\Scripts\NearPersistentManager.cs" />
-     <Compile Include="Assets\Example\Scripts\Wasm.cs" />
      <Compile Include="Assets\Example\Scripts\SignInButtonHandler.cs" />
      <Folder Include="Assets" />
      <Folder Include="Assets\Example\Content\Fonts\Jupiter" />
@@ -57,7 +57,6 @@
      <None Include="Assets\csc.rsp" />
      <Folder Include="Assets\Example\Scenes" />
      <Folder Include="Assets\Example\Scripts" />
-     <Folder Include="Assets\NearPlugin\Scripts\Hidden\NearSrc\Src" />
      <None Include="Assets\Example\Content\Fonts\Jupiter\LICENSE.txt" />
      <Folder Include="Assets\Example\Content\Textures and Sprites\SF UI" />
      <Folder Include="Assets\Example\Content\Fonts" />
@@ -285,7 +284,7 @@
      <HintPath>C:\Users\filis\Unity projects\near-api-unity\Assets\Plugins\NearPlugin\DLL\NearClientUnity.dll</HintPath>
      </Reference>
      <Reference Include="Newtonsoft.Json">
-     <HintPath>C:\Users\filis\Unity projects\near-api-unity\Assets\Plugins\Newtonsoft.Json.dll</HintPath>
+     <HintPath>C:\Users\filis\Unity projects\near-api-unity\Library\PackageCache\com.unity.nuget.newtonsoft-json@3.0.2\Runtime\Newtonsoft.Json.dll</HintPath>
      </Reference>
      <Reference Include="UnityEditor.iOS.Extensions.Xcode">
      <HintPath>C:\Program Files\Unity\Hub\Editor\2020.3.47f1\Editor\Data\PlaybackEngines\iOSSupport\UnityEditor.iOS.Extensions.Xcode.dll</HintPath>
@@ -653,6 +652,9 @@
      <Reference Include="Unity.VisualStudio.Editor">
      <HintPath>C:\Users\filis\Unity projects\near-api-unity\Library\ScriptAssemblies\Unity.VisualStudio.Editor.dll</HintPath>
      </Reference>
+     <Reference Include="Unity.Mobile.AndroidLogcat.Editor">
+     <HintPath>C:\Users\filis\Unity projects\near-api-unity\Library\ScriptAssemblies\Unity.Mobile.AndroidLogcat.Editor.dll</HintPath>
+     </Reference>
      <Reference Include="Unity.Timeline.Editor">
      <HintPath>C:\Users\filis\Unity projects\near-api-unity\Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
      </Reference>
@@ -673,9 +675,6 @@
      </Reference>
      <Reference Include="UnityEngine.UI">
      <HintPath>C:\Users\filis\Unity projects\near-api-unity\Library\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
-     </Reference>
-     <Reference Include="Unity.Mobile.AndroidLogcat.Editor">
-     <HintPath>C:\Users\filis\Unity projects\near-api-unity\Library\ScriptAssemblies\Unity.Mobile.AndroidLogcat.Editor.dll</HintPath>
      </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -17,9 +17,9 @@ public class NearSceneScript : MonoBehaviour
     private string accountStoragePaid;
     private bool finished = false;
 
-    void Awake()
+    async void Awake()
     {
-        Task.Run(async() => await CollectInformation());
+        await CollectInformation();
     }
 
     private Text GetTextObjectByName(string name)

@@ -1,16 +1,19 @@
-﻿namespace NearClientUnity.Providers
+﻿using Newtonsoft.Json.Linq;
+
+namespace NearClientUnity.Providers
 {
     public class ExecutionError
     {
         public string ErrorMessage { get; set; }
         public string ErrorType { get; set; }
 
-        public static ExecutionError FromDynamicJsonObject(dynamic jsonObject)
+        public static ExecutionError FromDynamicJsonObject(object jsonObject)
         {
+            var jsonObj = (JObject)jsonObject;
             var result = new ExecutionError()
             {
-                ErrorMessage = jsonObject.error_message,
-                ErrorType = jsonObject.error_type
+                ErrorMessage = jsonObj["error_message"].ToString(),
+                ErrorType = jsonObj["error_type"].ToString()
             };
             return result;
         }

@@ -1,23 +1,27 @@
-﻿namespace NearClientUnity.Providers
+﻿using Newtonsoft.Json.Linq;
+
+namespace NearClientUnity.Providers
 {
     public class FinalExecutionStatus
     {
         public ExecutionError Failure { get; set; }
         public string SuccessValue { get; set; }
 
-        public static FinalExecutionStatus FromDynamicJsonObject(dynamic jsonObject)
+        public static FinalExecutionStatus FromDynamicJsonObject(object jsonObject)
         {
-            var isFailure = jsonObject.Failure != null;
+            var jsonObj = (JObject)jsonObject;
+            var isFailure = jsonObj["Failure"] != null;
+
             if (isFailure)
             {
                 return new FinalExecutionStatus()
                 {
-                    Failure = ExecutionError.FromDynamicJsonObject(jsonObject.Failure),
+                    Failure = ExecutionError.FromDynamicJsonObject(jsonObj["Failure"]),
                 };
             }
             return new FinalExecutionStatus()
             {
-                SuccessValue = jsonObject.SuccessValue
+                SuccessValue = jsonObj["SuccessValue"].ToString()
             };
         }
     }

@@ -3,9 +3,11 @@ using NearClientUnity.Utilities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace NearClientUnity
 {
@@ -46,7 +48,7 @@ namespace NearClientUnity
                 accessKey = AccessKey.FunctionCallAccessKey(contractId, (string.IsNullOrWhiteSpace(methodName) || string.IsNullOrEmpty(methodName)) ? Array.Empty<string>() : new[] { methodName }, amount);
             }
             var result = await SignAndSendTransactionAsync(_accountId, new[] { Action.AddKey(new PublicKey(publicKey), accessKey) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> AddKeyAsync(string publicKey,
@@ -62,7 +64,7 @@ namespace NearClientUnity
                 accessKey = AccessKey.FunctionCallAccessKey(contractId, (string.IsNullOrWhiteSpace(methodName) || string.IsNullOrEmpty(methodName)) ? Array.Empty<string>() : new[] { methodName });
             }
             var result = await SignAndSendTransactionAsync(_accountId, new[] { Action.AddKey(new PublicKey(publicKey), accessKey) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> CreateAccountAsync(string newAccountId, string publicKey,
@@ -72,7 +74,7 @@ namespace NearClientUnity
             var actions = new[]
                 {Action.CreateAccount(), Action.Transfer(amount), Action.AddKey(new PublicKey(publicKey), accessKey)};
             var result = await SignAndSendTransactionAsync(newAccountId, actions);
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> CreateAccountAsync(string newAccountId, PublicKey publicKey,
@@ -82,7 +84,7 @@ namespace NearClientUnity
             var actions = new[]
                 {Action.CreateAccount(), Action.Transfer(amount), Action.AddKey(publicKey, accessKey)};
             var result = await SignAndSendTransactionAsync(newAccountId, actions);
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<Account> CreateAndDeployContractAsync(string contractId, string publicKey, byte[] data,
@@ -121,53 +123,54 @@ namespace NearClientUnity
         {
             var result =
                 await SignAndSendTransactionAsync(_accountId, new[] { Action.DeleteAccount(beneficiaryId) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> DeleteKeyAsync(string publicKey)
         {
             var result = await SignAndSendTransactionAsync(_accountId, new[] { Action.DeleteKey(new PublicKey(publicKey)) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> DeleteKeyAsync(PublicKey publicKey)
         {
             var result = await SignAndSendTransactionAsync(_accountId, new[] { Action.DeleteKey(publicKey) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> DeployContractAsync(byte[] data)
         {
             var result = await SignAndSendTransactionAsync(_accountId, new[] { Action.DeployContract(data) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task FetchStateAsync()
         {
             _accessKey = null;
 
-            try
-            {
-                var rawState = await _connection.Provider.QueryAsync($"account/{_accountId}", "");
-                if (rawState == null)
-                {                    
-                    return;
-                }
-                _state = new AccountState()
+                try
                 {
-                    AccountId = rawState.account_id ?? null,
-                    Staked = rawState.staked ?? null,
-                    Locked = rawState.locked,
-                    Amount = rawState.amount,
-                    CodeHash = rawState.code_hash,
-                    StoragePaidAt = rawState.storage_paid_at,
-                    StorageUsage = rawState.storage_usage
-                };
-            }
-            catch (Exception)
-            {
-                throw new Exception($"Failed to fetch state for '{_accountId}'");
-            }
+                    var rawState = await _connection.Provider.QueryAsync<AccountState>($"account/{_accountId}", "");
+                    if (rawState == null)
+                    {                    
+                        return;
+                    }
+                    _state = new AccountState()
+                    {
+                        AccountId = rawState.AccountId ?? null,
+                        Staked = rawState.Staked ?? null,
+                        Locked = rawState.Locked,
+                        Amount = rawState.Amount,
+                        CodeHash = rawState.CodeHash,
+                        StoragePaidAt = rawState.StoragePaidAt,
+                        StorageUsage = rawState.StorageUsage
+                    };
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                    throw new Exception($"Failed to fetch state for '{_accountId}'");
+                }
 
             var publicKey = await _connection.Signer.GetPublicKeyAsync(_accountId, _connection.NetworkId);
             if (publicKey == null) return;
@@ -175,8 +178,8 @@ namespace NearClientUnity
             try
             {
                 var rawAccessKey =
-                    await _connection.Provider.QueryAsync($"access_key/{_accountId}/{publicKey.ToString()}", "");
-                _accessKey = AccessKey.FromDynamicJsonObject(rawAccessKey);
+                    await _connection.Provider.QueryAsync<object>($"access_key/{_accountId}/{publicKey.ToString()}", "");
+                _accessKey = AccessKey.FromDynamicJsonObject((JObject)rawAccessKey);
             }
             catch (Exception)
             {
@@ -185,11 +188,11 @@ namespace NearClientUnity
             }
         }
 
-        public async Task<dynamic> FunctionCallAsync(string contractId, string methodName, dynamic args, ulong? gas = null, Nullable<UInt128> amount = null)
+        public async Task<object> FunctionCallAsync(string contractId, string methodName, object args, ulong? gas = null, Nullable<UInt128> amount = null)
         {
             if (args == null)
             {
-                args = new ExpandoObject();
+                args = new Dictionary<string, object>();
             }
 
             var methodArgs = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(args));
@@ -199,38 +202,42 @@ namespace NearClientUnity
             return result;
         }
 
+
         /// Returns array of {access_key: AccessKey, public_key: PublicKey} items.
-        public async Task<dynamic> GetAccessKeysAsync()
+        public async Task<object> GetAccessKeysAsync()
         {
-            var response = await _connection.Provider.QueryAsync($"access_key/{_accountId}", "");
+            var response = await _connection.Provider.QueryAsync<object>($"access_key/{_accountId}", "");
             return response;
         }
 
-        public async Task<dynamic> GetAccountDetailsAsync()
+        public async Task<object> GetAccountDetailsAsync()
         {
             // TODO: update the response value to return all the different keys, not just app keys.
             // Also if we need this function, or getAccessKeys is good enough.
             var accessKeys = await GetAccessKeysAsync();
-            dynamic result = new ExpandoObject();
-            var authorizedApps = new List<dynamic>();
+            var result = new Dictionary<string, object>();
+            var authorizedApps = new List<Dictionary<string, object>>();
 
-            foreach (var key in accessKeys)
+            foreach (var key in (IEnumerable<object>)accessKeys)
             {
-                var rawPermission = key.access_key.permission;
-                var isFullAccess = rawPermission.GetType().Name == "JValue" && rawPermission.Value.GetType().Name == "String" && key.access_key.permission.Value == "FullAccess";
+                var rawPermission = ((JObject)key)["access_key"]["permission"];
+                var isFullAccess = rawPermission.Type == JTokenType.String && rawPermission.Value<string>() == "FullAccess";
                 if (isFullAccess) continue;
-                var perm = key.access_key.permission.FunctionCall;
-                dynamic authorizedApp = new ExpandoObject();
-                authorizedApp.ContractId = perm.receiver_id;
-                authorizedApp.Amount = perm.allowance;
-                authorizedApp.PublicKey = key.public_key;
+                var perm = ((JObject)key)["access_key"]["permission"]["FunctionCall"];
+                var authorizedApp = new Dictionary<string, object>();
+                authorizedApp["ContractId"] = perm["receiver_id"].Value<string>();
+                authorizedApp["Amount"] = perm["allowance"].Value<string>();
+                authorizedApp["PublicKey"] = ((JObject)key)["public_key"].Value<string>();
                 authorizedApps.Add(authorizedApp);
             }
 
-            result.AuthorizedApps = authorizedApps.ToArray();
-            result.Transactions = Array.Empty<dynamic>();
+            result["AuthorizedApps"] = authorizedApps.ToArray();
+            result["Transactions"] = Array.Empty<object>();
             return result;
         }
+
+
+
 
         public async Task<AccountState> GetStateAsync()
         {
@@ -241,41 +248,44 @@ namespace NearClientUnity
         public async Task<FinalExecutionOutcome> SendMoneyAsync(string receiverId, UInt128 amount)
         {
             var result = await SignAndSendTransactionAsync(receiverId, new[] { Action.Transfer(amount) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> StakeAsync(string publicKey, UInt128 amount)
         {
             var result = await SignAndSendTransactionAsync(_accountId, new[] { Action.Stake(amount, new PublicKey(publicKey)) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
         public async Task<FinalExecutionOutcome> StakeAsync(PublicKey publicKey, UInt128 amount)
         {
             var result = await SignAndSendTransactionAsync(_accountId, new[] { Action.Stake(amount, publicKey) });
-            return result;
+            return (FinalExecutionOutcome)result;
         }
 
-        public async Task<dynamic> ViewFunctionAsync(string contractId, string methodName, dynamic args)
+        public async Task<object> ViewFunctionAsync(string contractId, string methodName, object args)
         {
             if (args == null)
             {
-                args = new ExpandoObject();
+                args = new Dictionary<string, object>();
             }
 
             var methodArgs = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(args));
-            var response = await _connection.Provider.QueryAsync($"call/{contractId}/{methodName}", Base58.Encode(methodArgs));
+            var response = await _connection.Provider.QueryAsync<object>($"call/{contractId}/{methodName}", Base58.Encode(methodArgs));
 
-            var result = response;
+            var result = (JObject)response;
 
-            if (result.logs != null && result.logs.GetType() is ArraySegment<string> && result.logs.Length > 0)
+            if (result["logs"] != null && result["logs"].GetType() is ArraySegment<string> && result["logs"].Count() > 0)
             {
-                PrintLogs(contractId, result.logs);
+                var logs = result["logs"].ToObject<string[]>();
+                PrintLogs(contractId, logs);
             }
 
             return result;
         }
 
+
+        
         protected async Task<bool> GetReadyStatusAsync()
         {
             if (_ready) return _ready;
@@ -323,20 +333,22 @@ namespace NearClientUnity
                 $"Exceeded {TxStatusRetryNumber} status check attempts for transaction ${Base58.Encode(txHash)}");
         }
 
-        private async Task<dynamic> SignAndSendTransactionAsync(string receiverId, Action[] actions)
+        private async Task<object> SignAndSendTransactionAsync(string receiverId, Action[] actions)
         {
             if (!await GetReadyStatusAsync())
             {
-                throw new Exception($"Can not sign transactions, no matching key pair found in Signer.");
+                throw new Exception($"Cannot sign transactions, no matching key pair found in Signer.");
             }
+
             var status = await _connection.Provider.GetStatusAsync();
             var signTransaction = await SignedTransaction.SignTransactionAsync(receiverId, (ulong)++_accessKey.Nonce, actions,
                 new ByteArray32() { Buffer = Base58.Decode(status.SyncInfo.LatestBlockHash) }, _connection.Signer, _accountId, _connection.NetworkId);
-            dynamic result;
+
+            object result;
 
             try
             {
-                result = await _connection.Provider.SendTransactionAsync(signTransaction.Item2);
+                result = await _connection.Provider.SendTransactionAsync<object>(signTransaction.Item2);
             }
             catch (Exception e)
             {
@@ -351,26 +363,8 @@ namespace NearClientUnity
                 }
             }
 
-            // var tempFlatLogs = new ExecutionOutcomeWithId[1 + result.Receipts.Length];
-            // tempFlatLogs[0] = result.Transaction;
-            // Array.Copy(result.Receipts, 0, tempFlatLogs, 1, result.Receipts.Length);
-            //
-            // var flatLogs = new List<string>();
-            //
-            // foreach (var t in tempFlatLogs)
-            // {
-            //     flatLogs.AddRange(t.Outcome.Logs);
-            // }
-            //
-            // PrintLogs(signTransaction.Item2.Transaction.ReceiverId, flatLogs.ToArray());
-            //
-            // if (result.Status != null && result.Status.Failure != null)
-            // {
-            //     throw new Exception($"Transaction {result.Transaction.Id} failed. {result.Status.Failure.ErrorMessage ?? ""}");
-            // }
-
-            // ToDo: Add typed error handling
             return result;
         }
+
     }
 }

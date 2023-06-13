@@ -1,5 +1,6 @@
 ﻿using NearClientUnity.Utilities;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace NearClientUnity
 {
@@ -16,14 +17,13 @@ namespace NearClientUnity
             }
         }
 
-        public static AccessKey FromDynamicJsonObject(dynamic jsonObject)
+        public static AccessKey FromDynamicJsonObject(JObject jsonObject)
         {
-            
-            if (jsonObject.permission.GetType().Name == "JValue" && jsonObject.permission.Value.GetType().Name == "String" && jsonObject.permission.Value == "FullAccess")
+            if (jsonObject["permission"].Value<string>() == "FullAccess")
             {
                 return new AccessKey
                 {
-                    Nonce = jsonObject.nonce,
+                    Nonce = jsonObject["nonce"].Value<ulong>(),
                     Permission = new AccessKeyPermission
                     {
                         PermissionType = AccessKeyPermissionType.FullAccessPermission,
@@ -33,18 +33,18 @@ namespace NearClientUnity
             }
             else
             {
-                var rawAllowance = jsonObject.permission.FunctionCall.allowance ?? null;
+                var rawAllowance = jsonObject["permission"]["FunctionCall"]["allowance"]?.Value<string>();
                 return new AccessKey
                 {
-                    Nonce = jsonObject.nonce,
+                    Nonce = jsonObject["nonce"].Value<ulong>(),
                     Permission = new AccessKeyPermission
                     {
                         PermissionType = AccessKeyPermissionType.FunctionCallPermission,
                         FunctionCall = new FunctionCallPermission()
                         {
                             Allowance = rawAllowance == null ? UInt128.Parse(rawAllowance) : null,
-                            MethodNames = jsonObject.permission.FunctionCall.method_names.ToObject<string[]>(),
-                            ReceiverId = jsonObject.permission.FunctionCall.receiver_id,
+                            MethodNames = jsonObject["permission"]["FunctionCall"]["method_names"].ToObject<string[]>(),
+                            ReceiverId = jsonObject["permission"]["FunctionCall"]["receiver_id"].Value<string>(),
                         }
                     }
                 };

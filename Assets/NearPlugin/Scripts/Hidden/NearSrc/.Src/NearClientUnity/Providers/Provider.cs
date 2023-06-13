@@ -8,7 +8,7 @@ namespace NearClientUnity.Providers
 {
     public abstract class Provider
     {
-        public static dynamic GetTransactionLastResult(FinalExecutionOutcome txResult)
+        public static object GetTransactionLastResult(FinalExecutionOutcome txResult)
         {
             if (txResult.Status == null || txResult.Status.GetType() != typeof(FinalExecutionStatus) || string.Equals(
                     txResult.Status.SuccessValue, null, StringComparison.Ordinal)) return null;
@@ -38,8 +38,8 @@ namespace NearClientUnity.Providers
 
         public abstract Task<FinalExecutionOutcome> GetTxStatusAsync(byte[] txHash, string accountId);
 
-        public abstract Task<dynamic> QueryAsync(string path, string data);
+        public abstract Task<T> QueryAsync<T>(string path, string data);
 
-        public abstract Task<dynamic> SendTransactionAsync(SignedTransaction signedTransaction);
+        public abstract Task<T> SendTransactionAsync<T>(SignedTransaction signedTransaction);
     }
 }

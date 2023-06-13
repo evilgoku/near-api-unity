@@ -1,4 +1,7 @@
-﻿namespace NearClientUnity.Providers
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
+
+namespace NearClientUnity.Providers
 {
     public abstract class ChunkHeader
     {
@@ -18,7 +21,12 @@
         public abstract int ShardId { get; set; }
         public abstract string Signature { get; set; }
         public abstract string TxRoot { get; set; }
-        public abstract dynamic[] ValidatorProposals { get; set; }
+        public abstract List<object> ValidatorProposals { get; set; }
         public abstract string ValidatorReward { get; set; }
+        
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
     }
 }

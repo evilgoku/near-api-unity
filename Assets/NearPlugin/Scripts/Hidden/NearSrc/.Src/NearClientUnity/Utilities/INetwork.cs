@@ -5,6 +5,6 @@
         string ChainId { get; set; }
         string Name { get; set; }
 
-        dynamic DefaultProvider(dynamic providers);
+        object DefaultProvider(object providers);
     }
 }

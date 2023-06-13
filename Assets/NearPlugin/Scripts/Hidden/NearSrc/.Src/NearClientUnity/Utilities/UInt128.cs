@@ -38,7 +38,7 @@ namespace NearClientUnity.Utilities
             Create(out this, value);
         }
 
-        public UInt128(ulong value)
+        public UInt128(ulong value1, ulong value)
         {
             Create(out this, value);
         }

@@ -3,12 +3,11 @@ using NearClientUnity.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Dynamic;
 using System.Net.Http;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Util;
+using UnityEngine;
 
 namespace NearClientUnity
 {
@@ -18,7 +17,7 @@ namespace NearClientUnity
         private const string LoginWalletUrlSuffix = "/login/";
         private const string PendingAccessKeyPrefix = "pending_key";
 
-        private dynamic _authData = new ExpandoObject();
+        private AuthData _authData = new AuthData();
         private string _authDataKey;
         private IExternalAuthService _authService;
         private IExternalAuthStorage _authStorage;
@@ -55,10 +54,41 @@ namespace NearClientUnity
 
         public async Task CompleteSignIn(string url)
         {
-            HttpEncoder.Current = HttpEncoder.Default;
             Uri uri = new Uri(url);
-            string publicKey = HttpUtility.ParseQueryString(uri.Query).Get("public_key");
-            string accountId = HttpUtility.ParseQueryString(uri.Query).Get("account_id");
+
+            if (uri.AbsoluteUri == "nearclientunity://testnet.mynearwallet.com/fail")
+            {
+                return;
+            }
+
+            string publicKey = null;
+            string accountId = null;
+            if (!string.IsNullOrWhiteSpace(uri.Query))
+            {
+                var queryParams = uri.Query.TrimStart('?').Split('&');
+                foreach (var queryParam in queryParams)
+                {
+                    var parts = queryParam.Split('=');
+                    if (parts.Length >= 2)
+                    {
+                        var key = Uri.UnescapeDataString(parts[0]);
+                        var value = Uri.UnescapeDataString(parts[1]);
+
+                        if (key == "public_key")
+                        {
+                            publicKey = value;
+                        }
+                        else if (key == "account_id")
+                        {
+                            accountId = value;
+                        }
+                    }
+                }
+            }
+
+            if (publicKey == null || accountId == null)
+                return;
+
             await SetData(accountId, publicKey);
         }
         
@@ -96,7 +126,7 @@ namespace NearClientUnity
             return _keySet;
         }
 
-        public async Task<bool> RequestSignIn(string contractId, string title, Uri successUrl, Uri failureUrl, Uri appUrl)
+        public async Task<bool>  RequestSignIn(string contractId, string title, Uri successUrl, Uri failureUrl, Uri appUrl)
         {
             // if (!string.IsNullOrWhiteSpace(GetAccountId())) return true;
             // if (await _keyStore.GetKeyAsync(_networkId, GetAccountId()) != null) return true;
@@ -131,7 +161,7 @@ namespace NearClientUnity
 
         public void SignOut()
         {
-            _authData = new ExpandoObject();
+            _authData = new AuthData();
             _authStorage.DeleteKey("tempNearAccessKey");
             _authStorage.DeleteKey(GetAccountId());
             _authStorage.DeleteKey(_authDataKey);
@@ -168,6 +198,11 @@ namespace NearClientUnity
             {
                 throw e;
             }
+        }
+        
+        private class AuthData
+        {
+            public string AccountId { get; set; }
         }
     }
 }

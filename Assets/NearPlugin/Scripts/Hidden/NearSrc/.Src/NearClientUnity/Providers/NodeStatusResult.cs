@@ -9,21 +9,23 @@ namespace NearClientUnity.Providers
         public SyncInfo SyncInfo { get; set; }
         public JArray Validators { get; set; }
 
-        public static NodeStatusResult FromDynamicJsonObject(dynamic jsonObject)
+        public static NodeStatusResult FromDynamicJsonObject(object jsonObject)
         {
+            var jsonObj = (Newtonsoft.Json.Linq.JObject)jsonObject;
+
             var result = new NodeStatusResult()
             {
-                ChainId = jsonObject.chain_id,
-                RpcAddr = jsonObject.rpc_addr,
+                ChainId = jsonObj["chain_id"].ToObject<string>(),
+                RpcAddr = jsonObj["rpc_addr"].ToObject<string>(),
                 SyncInfo = new SyncInfo()
                 {
-                    LatestBlockHash = jsonObject.sync_info.latest_block_hash,
-                    LatestBlockHeight = jsonObject.sync_info.latest_block_height,
-                    LatestBlockTime = jsonObject.sync_info.latest_block_time,
-                    LatestStateRoot = jsonObject.sync_info.latest_state_root,
-                    Syncing = jsonObject.sync_info.syncing
+                    LatestBlockHash = jsonObj["sync_info"]["latest_block_hash"].ToObject<string>(),
+                    LatestBlockHeight = jsonObj["sync_info"]["latest_block_height"].ToObject<int>(),
+                    LatestBlockTime = jsonObj["sync_info"]["latest_block_time"].ToObject<string>(),
+                    LatestStateRoot = jsonObj["sync_info"]["latest_state_root"].ToObject<string>(),
+                    Syncing = jsonObj["sync_info"]["syncing"].ToObject<bool>()
                 },
-                Validators = jsonObject.validators
+                Validators = jsonObj["validators"] as JArray
             };
             return result;
         }

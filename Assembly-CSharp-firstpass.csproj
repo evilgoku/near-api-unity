@@ -43,9 +43,9 @@
   <ItemGroup>
      <Folder Include="Assets\Plugins" />
      <None Include="Assets\Plugins\Android\AndroidManifest.xml" />
+     <Folder Include="Assets\Plugins\NearPlugin\DLL" />
      <Folder Include="Assets\Plugins\Android" />
      <Folder Include="Assets\Plugins\NearPlugin" />
-     <Folder Include="Assets\Plugins\NearPlugin\DLL" />
      <Reference Include="UnityEngine">
      <HintPath>C:\Program Files\Unity\Hub\Editor\2020.3.47f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
      </Reference>

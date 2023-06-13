@@ -22,14 +22,11 @@ namespace NearClientUnity.KeyStores
             await Task.Run(() => Directory.CreateDirectory(path));
         }
 
-        public static async Task<dynamic> LoadJsonFile(string path)
+        public static async Task<object> LoadJsonFile(string path)
         {
-            using (var sourceStream = new FileStream(path,
-                FileMode.Open, FileAccess.Read, FileShare.Read,
-                bufferSize: 4096, useAsync: true))
+            using (var sourceStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true))
             {
                 var sb = new StringBuilder();
-
                 var buffer = new byte[0x1000];
                 int numRead;
                 while ((numRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
@@ -38,18 +35,21 @@ namespace NearClientUnity.KeyStores
                     sb.Append(text);
                 }
 
-                dynamic result = JObject.Parse(sb.ToString());
+                object result = JObject.Parse(sb.ToString());
                 return result;
             }
         }
 
-        public static async Task<dynamic[]> ReadKeyFile(string path)
+
+        public static async Task<KeyFileData[]> ReadKeyFile(string path)
         {
-            var accountInfo = await LoadJsonFile(path);
-            string privateKey = accountInfo.PrivateKey;
-            if (privateKey == null && accountInfo.SecretKey != null) privateKey = accountInfo.SecretKey;
-            return new dynamic[] { accountInfo.AccountId, KeyPair.FromString(privateKey) };
+            var accountInfo = await LoadJsonFile(path) as JObject;
+            string privateKey = accountInfo["PrivateKey"]?.ToString();
+            if (privateKey == null && accountInfo["SecretKey"] != null)
+                privateKey = accountInfo["SecretKey"].ToString();
+            return new KeyFileData[] { new KeyFileData { AccountId = accountInfo["AccountId"].ToString(), KeyPair = KeyPair.FromString(privateKey) }};
         }
+
 
         public override async Task ClearAsync()
         {
@@ -79,7 +79,7 @@ namespace NearClientUnity.KeyStores
         {
             if (!File.Exists(GetKeyFilePath(networkId, accountId))) return null;
             var accountKeyPair = await ReadKeyFile(GetKeyFilePath(networkId, accountId));
-            return accountKeyPair[1];
+            return accountKeyPair[0].KeyPair;
         }
 
         public override async Task<string[]> GetNetworksAsync()

@@ -1,7 +1,6 @@
 ﻿using NearClientUnity.KeyStores;
 using NearClientUnity.Utilities;
 using System;
-using System.Dynamic;
 using System.Threading.Tasks;
 
 namespace NearClientUnity
@@ -16,10 +15,15 @@ namespace NearClientUnity
         {
             _config = config;
 
-            dynamic providerArgs = new ExpandoObject();
-            providerArgs.Url = config.NodeUrl;
-            dynamic signerArgs = new ExpandoObject();
-            signerArgs.KeyStore = config.KeyStore;
+            var providerArgs = new ProviderArgs
+            {
+                Url = config.NodeUrl
+            };
+            var signerArgs = new SignerArgs
+            {
+                KeyStore = config.KeyStore
+            };
+            
             var connectionConfig = new ConnectionConfig()
             {
                 NetworkId = config.NetworkId,
@@ -59,22 +63,22 @@ namespace NearClientUnity
         public NearConfig Config => _config;
         public Connection Connection => _connection;
 
-        public static async Task<Near> ConnectAsync(dynamic config)
+        public static async Task<Near> ConnectAsync(NearConfig config)
         {
             // Try to find extra key in `KeyPath` if provided.
             if (config.KeyPath == null) return new Near(config);
             try
             {
-                var accountKeyFile = await UnencryptedFileSystemKeyStore.ReadKeyFile(config.keyPath);
-                if (accountKeyFile[0] != null)
+                var accountKeyFile = await UnencryptedFileSystemKeyStore.ReadKeyFile(config.KeyPath);
+                if (accountKeyFile[0].AccountId != null)
                 {
                     // TODO: Only load key if network ID matches
-                    var keyPair = accountKeyFile[1];
+                    var keyPair = accountKeyFile[0].KeyPair;
                     var keyPathStore = new InMemoryKeyStore();
-                    await keyPathStore.SetKeyAsync(config.NetworkId, accountKeyFile[0], keyPair);
+                    await keyPathStore.SetKeyAsync(config.NetworkId, accountKeyFile[0].AccountId, keyPair);
                     if (config.MasterAccount == null)
                     {
-                        config.MasterAccount = accountKeyFile[0];
+                        config.MasterAccount = accountKeyFile[0].AccountId;
                     }
 
                     config.KeyStore = new MergeKeyStore(new KeyStore[] { config.KeyStore, keyPathStore });

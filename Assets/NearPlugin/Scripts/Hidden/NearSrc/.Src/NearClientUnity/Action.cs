@@ -1,31 +1,33 @@
 ﻿using NearClientUnity.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace NearClientUnity
 {
     public class Action
     {
-        private readonly dynamic _args;
+        private readonly object _args;
         private readonly ActionType _type;
 
-        public Action(ActionType type, dynamic args)
+        public Action(ActionType type, object args)
         {
             _type = type;
             _args = args;
         }
 
-        public dynamic Args => _args;
+        public object Args => _args;
 
         public ActionType Type => _type;
 
         public static Action AddKey(PublicKey publicKey, AccessKey accessKey)
         {
-            dynamic args = new ExpandoObject();
-            args.PublicKey = publicKey;
-            args.AccessKey = accessKey;
+            var args = new
+            {
+                PublicKey = publicKey,
+                AccessKey = accessKey
+            };
             return new Action(ActionType.AddKey, args);
         }
 
@@ -36,22 +38,28 @@ namespace NearClientUnity
 
         public static Action DeleteAccount(string beneficiaryId)
         {
-            dynamic args = new ExpandoObject();
-            args.BeneficiaryId = beneficiaryId;
+            var args = new
+            {
+                BeneficiaryId = beneficiaryId
+            };
             return new Action(ActionType.DeleteAccount, args);
         }
 
         public static Action DeleteKey(PublicKey publicKey)
         {
-            dynamic args = new ExpandoObject();
-            args.PublicKey = publicKey;
+            var args = new
+            {
+                PublicKey = publicKey
+            };
             return new Action(ActionType.DeleteKey, args);
         }
 
         public static Action DeployContract(byte[] code)
         {
-            dynamic args = new ExpandoObject();
-            args.Code = code;
+            var args = new
+            {
+                Code = code
+            };
             return new Action(ActionType.DeployContract, args);
         }
 
@@ -75,28 +83,37 @@ namespace NearClientUnity
 
         public static Action FunctionCall(string methodName, byte[] methodArgs, ulong? gas, UInt128 deposit)
         {
-            dynamic args = new ExpandoObject();
-            args.MethodName = methodName;
-            args.MethodArgs = methodArgs;
-            args.Gas = gas;
-            args.Deposit = deposit;
+            var args = new
+            {
+                MethodName = methodName,
+                MethodArgs = methodArgs,
+                Gas = gas,
+                Deposit = deposit
+            };
             return new Action(ActionType.FunctionCall, args);
         }
 
+
         public static Action Stake(UInt128 stake, PublicKey publicKey)
         {
-            dynamic args = new ExpandoObject();
-            args.Stake = stake;
-            args.PublicKey = publicKey;
+            var args = new
+            {
+                Stake = stake,
+                PublicKey = publicKey
+            };
             return new Action(ActionType.Stake, args);
         }
 
+
         public static Action Transfer(UInt128 deposit)
         {
-            dynamic args = new ExpandoObject();
-            args.Deposit = deposit;
+            var args = new
+            {
+                Deposit = deposit
+            };
             return new Action(ActionType.Transfer, args);
         }
+
 
         public byte[] ToByteArray()
         {
@@ -106,60 +123,83 @@ namespace NearClientUnity
                 {
                     writer.Write((byte)_type);
 
+                    var argsDict = JObject.FromObject(_args);
+
                     switch (_type)
                     {
                         case ActionType.AddKey:
                             {
-                                writer.Write(_args.PublicKey.ToByteArray());
-                                writer.Write(_args.AccessKey.ToByteArray());
-                                return ms.ToArray();
+                                writer.Write((argsDict["PublicKey"].ToObject<PublicKey>()).ToByteArray());
+                                writer.Write((argsDict["AccessKey"].ToObject<AccessKey>()).ToByteArray());
+                                break;
                             }
                         case ActionType.DeleteKey:
                             {
-                                writer.Write(_args.PublicKey.ToByteArray());
-                                return ms.ToArray();
+                                writer.Write((argsDict["PublicKey"].ToObject<PublicKey>()).ToByteArray());
+                                break;
                             }
                         case ActionType.CreateAccount:
                             {
-                                return ms.ToArray();
+                                break;
                             }
                         case ActionType.DeleteAccount:
                             {
-                                writer.Write((string)_args.BeneficiaryId);
-                                return ms.ToArray();
+                                writer.Write((string)argsDict["BeneficiaryId"]);
+                                break;
                             }
                         case ActionType.DeployContract:
                             {
-                                writer.Write((uint)_args.Code.Length);
-                                writer.Write((byte[])_args.Code);
-                                return ms.ToArray();
+                                var codeBytes = (byte[])argsDict["Code"];
+                                writer.Write((uint)codeBytes.Length);
+                                writer.Write(codeBytes);
+                                break;
                             }
                         case ActionType.FunctionCall:
                             {
-                                writer.Write((string)_args.MethodName);
-                                writer.Write((uint)_args.MethodArgs.Length);
-                                writer.Write((byte[])_args.MethodArgs);
-                                writer.Write((ulong)_args.Gas);
-                                writer.Write((UInt128)_args.Deposit);
-                                return ms.ToArray();
+                                var methodName = (string)argsDict["MethodName"];
+                                var methodArgs = (byte[])argsDict["MethodArgs"];
+                                var gas = (ulong?)argsDict["Gas"] ?? 0;
+                                UInt128 deposit;
+                                try
+                                {
+                                    deposit = _args.GetType().GetProperty("Deposit")?.GetValue(_args) is UInt128
+                                        ? (UInt128)_args.GetType().GetProperty("Deposit")?.GetValue(_args)
+                                        : default;
+                                }
+                                catch
+                                {
+                                    deposit = UInt128.Zero;
+                                }
+
+
+                                writer.Write(methodName);
+                                writer.Write((uint)methodArgs.Length);
+                                writer.Write(methodArgs);
+                                writer.Write(gas);
+                                writer.Write(deposit);
+                                break;
                             }
                         case ActionType.Stake:
                             {
-                                writer.Write((UInt128)_args.Stake);
-                                writer.Write(_args.PublicKey.ToByteArray());
-                                return ms.ToArray();
+                                writer.Write(argsDict["Stake"].ToObject<UInt128>());
+                                writer.Write((argsDict["PublicKey"].ToObject<PublicKey>()).ToByteArray());
+                                break;
                             }
                         case ActionType.Transfer:
                             {
-                                writer.Write((UInt128)_args.Deposit);
-                                return ms.ToArray();
+                                writer.Write(argsDict["Deposit"].ToObject<UInt128>());
+                                break;
                             }
                         default:
                             throw new NotSupportedException("Unsupported action type");
                     }
+
+                    return ms.ToArray();
                 }
             }
         }
+
+
 
         private static Action FromRawDataStream(MemoryStream stream)
         {
@@ -171,15 +211,19 @@ namespace NearClientUnity
                 {
                     case ActionType.AddKey:
                         {
-                            dynamic args = new ExpandoObject();
-                            args.PublicKey = PublicKey.FromStream(ref stream);
-                            args.AccessKey = AccessKey.FromStream(ref stream);
+                            var args = new
+                            {
+                                PublicKey = PublicKey.FromStream(ref stream),
+                                AccessKey = AccessKey.FromStream(ref stream)
+                            };
                             return new Action(ActionType.AddKey, args);
                         }
                     case ActionType.DeleteKey:
                         {
-                            dynamic args = new ExpandoObject();
-                            args.PublicKey = PublicKey.FromStream(ref stream);
+                            var args = new
+                            {
+                                PublicKey = PublicKey.FromStream(ref stream)
+                            };
                             return new Action(ActionType.DeleteKey, args);
                         }
                     case ActionType.CreateAccount:
@@ -188,14 +232,14 @@ namespace NearClientUnity
                         }
                     case ActionType.DeleteAccount:
                         {
-                            dynamic args = new ExpandoObject();
-                            args.BeneficiaryId = reader.ReadString();
+                            var args = new
+                            {
+                                BeneficiaryId = reader.ReadString()
+                            };
                             return new Action(ActionType.DeleteAccount, args);
                         }
                     case ActionType.DeployContract:
                         {
-                            dynamic args = new ExpandoObject();
-
                             var byteCount = reader.ReadUInt();
 
                             var code = new List<byte>();
@@ -205,13 +249,14 @@ namespace NearClientUnity
                                 code.Add(reader.ReadByte());
                             }
 
-                            args.Code = code.ToArray();
+                            var args = new
+                            {
+                                Code = code.ToArray()
+                            };
                             return new Action(ActionType.DeployContract, args);
                         }
                     case ActionType.FunctionCall:
                         {
-                            dynamic args = new ExpandoObject();
-
                             var methodName = reader.ReadString();
 
                             var methodArgsCount = reader.ReadUInt();
@@ -227,34 +272,36 @@ namespace NearClientUnity
 
                             var deposit = reader.ReadUInt128();
 
-                            args.MethodName = methodName;
-                            args.MethodArgs = methodArgs.ToArray();
-                            args.Gas = gas;
-                            args.Deposit = deposit;
-
+                            var args = new
+                            {
+                                MethodName = methodName,
+                                MethodArgs = methodArgs.ToArray(),
+                                Gas = gas,
+                                Deposit = deposit
+                            };
                             return new Action(ActionType.FunctionCall, args);
                         }
                     case ActionType.Stake:
                         {
-                            dynamic args = new ExpandoObject();
-
                             var stake = reader.ReadUInt128();
 
                             var publicKey = PublicKey.FromStream(ref stream);
 
-                            args.Stake = stake;
-                            args.PublicKey = publicKey;
-
+                            var args = new
+                            {
+                                Stake = stake,
+                                PublicKey = publicKey
+                            };
                             return new Action(ActionType.Stake, args);
                         }
                     case ActionType.Transfer:
                         {
-                            dynamic args = new ExpandoObject();
-
                             var deposit = reader.ReadUInt128();
 
-                            args.Deposit = deposit;
-
+                            var args = new
+                            {
+                                Deposit = deposit
+                            };
                             return new Action(ActionType.Transfer, args);
                         }
                     default:
@@ -262,5 +309,22 @@ namespace NearClientUnity
                 }
             }
         }
+        
+        private static UInt128 ParseUInt128(string value)
+        {
+            // Assuming the format of the UInt128 value is correct
+            // Extract the individual parts of the value
+            var parts = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2)
+            {
+                throw new FormatException("Invalid UInt128 format");
+            }
+
+            var s0 = ulong.Parse(parts[0].Trim());
+            var s1 = ulong.Parse(parts[1].Trim());
+
+            return new UInt128(s0, s1);
+        }
+    
     }
 }

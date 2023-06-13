@@ -2,7 +2,7 @@
 {
     public class ProviderConfig
     {
-        public dynamic Args { get; set; }
+        public ProviderArgs Args { get; set; }
         public ProviderType Type { get; set; }
     }
 }

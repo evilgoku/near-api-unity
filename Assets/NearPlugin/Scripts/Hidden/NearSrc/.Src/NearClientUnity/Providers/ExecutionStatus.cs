@@ -6,27 +6,29 @@
         public string SuccessReceiptId { get; set; }
         public string SuccessValue { get; set; }
 
-        public static ExecutionStatus FromDynamicJsonObject(dynamic jsonObject)
+        public static ExecutionStatus FromDynamicJsonObject(object jsonObject)
         {
-            if (jsonObject.ToString() == "Unknown")
+            var jsonObj = (Newtonsoft.Json.Linq.JObject)jsonObject;
+
+            if (jsonObj.ToString() == "Unknown")
             {
                 return new ExecutionStatus();
             }
 
-            var isFailure = jsonObject.Failure != null;
+            var isFailure = jsonObj["Failure"] != null;
 
             if (isFailure)
             {
                 return new ExecutionStatus()
                 {
-                    Failure = ExecutionError.FromDynamicJsonObject(jsonObject.Failure),
+                    Failure = ExecutionError.FromDynamicJsonObject(jsonObj["Failure"]),
                 };
             }
 
             return new ExecutionStatus()
             {
-                SuccessReceiptId = jsonObject.SuccessReceiptId,
-                SuccessValue = jsonObject.SuccessValue,
+                SuccessReceiptId = jsonObj["SuccessReceiptId"].ToObject<string>(),
+                SuccessValue = jsonObj["SuccessValue"].ToObject<string>(),
             };
         }
     }

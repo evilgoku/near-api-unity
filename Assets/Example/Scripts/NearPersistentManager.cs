@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Dynamic;
 using UnityEngine;
 using NearClientUnity;
 using NearClientUnity.Utilities;
@@ -22,8 +21,8 @@ public class NearPersistentManager : MonoBehaviour
             ProviderType = ProviderType.JsonRpc,
             SignerType = SignerType.InMemory,
             KeyStore = new InMemoryKeyStore(),
-            ContractName = "dev-1666687644904-45000132622537",
-            WalletUrl = "https://wallet.testnet.near.org"
+            ContractName = "dev-1678015185015-40254331682784",
+            WalletUrl = "https://testnet.mynearwallet.com"
         });
         WalletAccount = new WalletAccount(
         Near,

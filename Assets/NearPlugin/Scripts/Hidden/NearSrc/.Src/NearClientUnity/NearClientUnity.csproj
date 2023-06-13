@@ -87,6 +87,7 @@
     <Compile Include="Near.cs" />
     <Compile Include="NearConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ProviderArgs.cs" />
     <Compile Include="Providers\BlockHeader.cs" />
     <Compile Include="Providers\BlockResult.cs" />
     <Compile Include="Providers\ChunkHeader.cs" />
@@ -109,6 +110,7 @@
     <Compile Include="NearSignature.cs" />
     <Compile Include="SignedTransaction.cs" />
     <Compile Include="Signer.cs" />
+    <Compile Include="SignerArgs.cs" />
     <Compile Include="SignerConfig.cs" />
     <Compile Include="SignerType.cs" />
     <Compile Include="Transaction.cs" />
@@ -116,6 +118,7 @@
     <Compile Include="Utilities\ByteArray64.cs" />
     <Compile Include="Utilities\ByteArray32.cs" />
     <Compile Include="Utilities\Base58.cs" />
+    <Compile Include="Utilities\KeyFileData.cs" />
     <Compile Include="Utilities\NearBinaryReader.cs" />
     <Compile Include="Utilities\NearBinaryWriter.cs" />
     <Compile Include="Utilities\Ed25519\CryptoBytes.cs" />

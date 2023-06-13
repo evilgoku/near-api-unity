@@ -1,58 +1,67 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Net.Http;
-using System.Net.Http.Headers;
+﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
+using UnityEngine;
+using UnityEngine.Networking;
+using Newtonsoft.Json.Linq;
 
 namespace NearClientUnity.Utilities
 {
     public static class Web
     {
-        public static async Task<dynamic> FetchJsonAsync(string url, string json = "")
+        public static async Task<T> FetchJsonAsync<T>(string url, string json = "")
         {
-            using (var client = new HttpClient())
+            try
             {
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                HttpResponseMessage response;
+                UnityWebRequest request = UnityWebRequest.Get(url);
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader("Accept", "application/json");
 
                 if (!string.IsNullOrEmpty(json))
                 {
-                    HttpContent content = new StringContent(json, Encoding.UTF8, "application/json");
-                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    response = await client.PostAsync(url, content);
-                }
-                else
-                {
-                    response = await client.GetAsync(url);
+                    byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+                    request.method = "POST";
+                    request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                    //request.downloadHandler = new DownloadHandlerBuffer();
                 }
 
-                if (response.IsSuccessStatusCode)
+                var asyncOperation = request.SendWebRequest();
+                while (!asyncOperation.isDone)
                 {
-                    string jsonString = await response.Content.ReadAsStringAsync();
+                    await Task.Yield();
+                }
 
-                    dynamic rawResult = JObject.Parse(jsonString);
+                if (!request.isNetworkError || !request.isHttpError)
+                {
+                    string jsonString = request.downloadHandler.text;
+                    var rawResult = JObject.Parse(jsonString);
 
-                    if (rawResult.error != null && rawResult.error.data != null)
+                    if (rawResult["error"] != null && rawResult["error"]["data"] != null)
                     {
-                        throw new Exception($"[{rawResult.error.code}]: {rawResult.error.data.error_type}: {rawResult.error.data.error_message}");
+                        var error = rawResult["error"];
+                        var errorData = error["data"];
+                        throw new Exception($"[{error["code"]}]: {errorData}");
                     }
-
-                    return rawResult.result;
+                                                            
+                    return rawResult["result"].ToObject<T>();
                 }
                 else
                 {
-                    throw new HttpException((int)response.StatusCode, response.Content.ToString());
+                    throw new Exception(request.error);
                 }
             }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+                throw;
+            }
+            
         }
 
-        public static async Task<dynamic> FetchJsonAsync(ConnectionInfo connection, string json = "")
+        public static async Task<T> FetchJsonAsync<T>(ConnectionInfo connection, string json = "")
         {
             var url = connection.Url;
-            var result = await FetchJsonAsync(url, json);
+            var result = await FetchJsonAsync<T>(url, json);
             return result;
         }
     }

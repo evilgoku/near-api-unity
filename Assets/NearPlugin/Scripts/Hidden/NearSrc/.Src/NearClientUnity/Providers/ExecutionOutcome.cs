@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace NearClientUnity.Providers
 {
@@ -10,25 +11,21 @@ namespace NearClientUnity.Providers
         public ExecutionStatus Status { get; set; }
         public ExecutionStatusBasic StatusBasic { get; set; }
 
-        public static ExecutionOutcome FromDynamicJsonObject(dynamic jsonObject)
+        public static ExecutionOutcome FromDynamicJsonObject(object jsonObject)
         {
-            var logs = new List<string>();
-            foreach (var log in jsonObject.logs)
-            {
-                logs.Add((string)log);
-            }
-            var receiptIds = new List<string>();
-            foreach (var receipt in jsonObject.receipt_ids)
-            {
-                receiptIds.Add((string)receipt);
-            }
+            var jsonObj = (JObject)jsonObject;
+
+            var logs = jsonObj["logs"].ToObject<string[]>();
+            var receiptIds = jsonObj["receipt_ids"].ToObject<string[]>();
+
             var result = new ExecutionOutcome()
             {
-                GasBurnt = jsonObject.gas_burnt,
-                Logs = logs.ToArray(),
-                ReceiptIds = receiptIds.ToArray(),
-                Status = ExecutionStatus.FromDynamicJsonObject(jsonObject.status),
+                GasBurnt = jsonObj["gas_burnt"].ToObject<int>(),
+                Logs = logs,
+                ReceiptIds = receiptIds,
+                Status = ExecutionStatus.FromDynamicJsonObject(jsonObj["status"]),
             };
+
             return result;
         }
     }

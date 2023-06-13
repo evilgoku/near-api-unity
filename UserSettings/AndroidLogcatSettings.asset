@@ -1,10 +1,10 @@
 {
-    "m_SelectedDeviceId": "127.0.0.1:5555",
+    "m_SelectedDeviceId": "emulator-5554",
     "m_SelectedPackage": {
-        "deviceId": "127.0.0.1:5555",
+        "deviceId": "emulator-5554",
         "name": "com.Near.NearUnityClient",
-        "processId": 4504,
-        "exited": true
+        "processId": 9827,
+        "exited": false
     },
     "m_SelectedPriority": 0,
     "m_KnownPackagesForSerialization": [
@@ -24,6 +24,42 @@
             "deviceId": "127.0.0.1:5555",
             "name": "com.Near.NearUnityClient",
             "processId": 4580,
+            "exited": false
+        },
+        {
+            "deviceId": "emulator-5554",
+            "name": "com.Near.NearUnityClient",
+            "processId": 7823,
+            "exited": true
+        },
+        {
+            "deviceId": "emulator-5554",
+            "name": "com.android.chrome",
+            "processId": 8333,
+            "exited": true
+        },
+        {
+            "deviceId": "emulator-5554",
+            "name": "com.Near.NearUnityClient",
+            "processId": 8265,
+            "exited": true
+        },
+        {
+            "deviceId": "emulator-5554",
+            "name": "com.Near.NearUnityClient",
+            "processId": 8812,
+            "exited": true
+        },
+        {
+            "deviceId": "emulator-5554",
+            "name": "com.Near.NearUnityClient",
+            "processId": 9181,
+            "exited": false
+        },
+        {
+            "deviceId": "emulator-5554",
+            "name": "com.Near.NearUnityClient",
+            "processId": 9827,
             "exited": false
         }
     ],
@@ -78,7 +114,7 @@
         "Behavior": 0
     },
     "m_FilterOptions": {
-        "m_Filter": "",
+        "m_Filter": "uri",
         "m_UseRegularExpressions": false,
         "m_MatchCase": false
     },
