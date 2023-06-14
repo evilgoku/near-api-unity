@@ -56,7 +56,7 @@ namespace NearClientUnity
         {
             Uri uri = new Uri(url);
 
-            if (uri.AbsoluteUri == "nearclientunity://testnet.mynearwallet.com/fail")
+            if (uri.AbsoluteUri.Contains("/fail"))
             {
                 return;
             }
@@ -99,7 +99,7 @@ namespace NearClientUnity
             try
             {
                 if (_authStorage.HasKey(accountId) == false && _authStorage.HasKey("tempNearAccessKey"))
-                    _authStorage.Add(accountId, Helper.Decrypt(_authStorage.GetValue("tempNearAccessKey")));
+                    _authStorage.Add(accountId, _authStorage.GetValue("tempNearAccessKey"));
                 _authStorage.Add(_authDataKey, accountId);         
                 await MoveKeyFromTempToPermanent(accountId, publicKey);
                 _keySet = true;
